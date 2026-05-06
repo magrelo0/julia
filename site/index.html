@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111">
+  <title>Para Julia ❤️</title>
+  <style>
+    :root{--bg1:#0f0c29;--bg2:#302b63;--accent:#ff3860}
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;color:#fff}
+    body{background:linear-gradient(135deg,var(--bg1),var(--bg2));display:flex;align-items:center;justify-content:center;padding:20px}
+    .card{width:100%;max-width:720px;background:rgba(255,255,255,0.03);border-radius:16px;padding:28px;text-align:center;backdrop-filter:blur(6px);box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    h1{margin:0;font-size:2.2rem;letter-spacing:0.4px}
+    .sub{color:rgba(255,255,255,0.78);margin-top:6px}
+    .heart-wrap{margin:18px 0}
+    .heart{display:inline-block;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#fff0 10%, rgba(255,255,255,0.04) 40%),linear-gradient(180deg,var(--accent),#ff6b88);box-shadow:0 8px 30px rgba(255,56,96,0.12),0 3px 8px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:44px}
+    .heart:after{content:'❤️';transform:scale(1);display:block;animation:beat 1100ms infinite}
+    @keyframes beat{0%{transform:scale(1)}50%{transform:scale(1.16)}100%{transform:scale(1)}}
+    .actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+    .btn{background:var(--accent);color:#fff;border:none;padding:12px 16px;border-radius:10px;font-weight:600;cursor:pointer;min-width:120px}
+    .ghost{background:transparent;border:1px solid rgba(255,255,255,0.12)}
+    #mensagem{margin-top:18px;text-align:left;line-height:1.5;max-height:0;overflow:hidden;transition:max-height .7s ease,padding .4s}
+    #mensagem.show{max-height:1000px;padding:12px 8px}
+    p.msg{margin:8px 0;color:rgba(255,255,255,0.95)}
+    .controls{display:flex;gap:8px;justify-content:center;margin-top:8px}
+    .small{padding:8px 12px;min-width:auto;font-size:14px}
+    /* confetti canvas */
+    canvas.confetti{position:fixed;pointer-events:none;left:0;top:0;width:100%;height:100%;z-index:999}
+    @media (max-width:420px){.heart{width:100px;height:100px;font-size:36px}}
+  </style>
+</head>
+<body>
+  <canvas class="confetti" id="confetti"></canvas>
+  <div class="card" role="main">
+    <h1>Para você, Julia ❤️</h1>
+    <div class="sub">Desde 10/04 — Uma mensagem especial</div>
+    <div class="heart-wrap"><div class="heart" aria-hidden="true"></div></div>
+
+    <div class="actions">
+      <button class="btn" id="openBtn">Abrir mensagem</button>
+      <button class="btn ghost" id="shareBtn">Compartilhar</button>
+      <button class="btn ghost" id="copyBtn">Copiar link</button>
+      <button class="btn ghost small" id="playBtn">Tocar som</button>
+    </div>
+
+    <div id="mensagem" aria-live="polite">
+      <p class="msg">Eu sei que às vezes a gente briga, até por coisas bobas como o Kevin… mas mesmo assim, nada muda o que eu sinto por você.</p>
+      <p class="msg">Eu posso até não saber exatamente o que falar em alguns momentos, mas sei muito bem o que eu sinto… e é você.</p>
+      <p class="msg">Você é a pessoa que eu escolho todos os dias, até nos dias difíceis.</p>
+      <p class="msg">E independente de qualquer coisa, eu só quero que você saiba: eu amo você ❤️</p>
+    </div>
+  </div>
+
+  <script>
+    const msgEl = document.getElementById('mensagem');
+    const openBtn = document.getElementById('openBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const playBtn = document.getElementById('playBtn');
+
+    function mostrarMensagem(){
+      if(!msgEl.classList.contains('show')){
+        msgEl.classList.add('show');
+        burstConfetti();
+      }
+    }
+
+    openBtn.addEventListener('click', mostrarMensagem);
+
+    // Auto-open if ?open=1
+    window.addEventListener('DOMContentLoaded', ()=>{
+      const params = new URLSearchParams(location.search);
+      if(params.get('open') === '1') mostrarMensagem();
+    });
+
+    // Share / Copy
+    shareBtn.addEventListener('click', async ()=>{
+      const url = location.href.split('#')[0];
+      if(navigator.share){
+        try{await navigator.share({title:'Uma mensagem para você',text:'Para Julia ❤️',url})}catch(e){}
+      }else{
+        copyToClipboard(url);
+        alert('Link copiado. Cole e compartilhe!');
+      }
+    });
+    copyBtn.addEventListener('click', ()=>{copyToClipboard(location.href.split('#')[0]);alert('Link copiado!')});
+
+    function copyToClipboard(text){
+      if(navigator.clipboard) return navigator.clipboard.writeText(text);
+      const t = document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();
+    }
+
+    // Simple generated melody using WebAudio
+    playBtn.addEventListener('click', ()=>{
+      try{playMelody();}catch(e){console.warn(e)}
+    });
+
+    function playMelody(){
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const notes = [440, 554.37, 659.25, 554.37]; // A4, C#5, E5, C#5
+      let t=0;
+      notes.forEach((f,i)=>{
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type='sine';o.frequency.value=f;g.gain.value=0.0001;
+        o.connect(g);g.connect(ctx.destination);
+        o.start(ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.42);
+        o.stop(ctx.currentTime + t + 0.45);
+        t += 0.45;
+      });
+    }
+
+    // Confetti (lightweight)
+    function burstConfetti(){
+      const canvas = document.getElementById('confetti');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = innerWidth;
+      const h = canvas.height = innerHeight;
+      const pieces = [];
+      for(let i=0;i<80;i++) pieces.push({x: w/2, y: h/2, vx:(Math.random()-0.5)*8, vy:(Math.random()-0.8)*8, r:Math.random()*6+4, c:['#ff5c7a','#ffd166','#7ee7c0','#9ad0f5'][Math.floor(Math.random()*4)]});
+      let t=0;
+      function draw(){
+        ctx.clearRect(0,0,w,h);
+        pieces.forEach(p=>{
+          p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.vx *= 0.99; p.vy *= 0.995; p.r *= 0.998;
+          ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+        });
+        t+=1;
+        if(t<180) requestAnimationFrame(draw);
+        else ctx.clearRect(0,0,w,h);
+      }
+      draw();
+    }
+  </script>
+</body>
+</html>
